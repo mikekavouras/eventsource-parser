@@ -42,7 +42,7 @@ export function createParser(onParse: EventSourceParseCallback): EventSourcePars
     data = ''
   }
 
-  function feed(chunk: string): void {
+  async function feed(chunk: string): void {
     buffer = buffer ? buffer + chunk : chunk
 
     // Strip any UTF8 byte order mark (BOM) at the start of the stream.
@@ -98,7 +98,7 @@ export function createParser(onParse: EventSourceParseCallback): EventSourcePars
         startingFieldLength = -1
       }
 
-      parseEventStreamLine(buffer, position, fieldLength, lineLength)
+      await parseEventStreamLine(buffer, position, fieldLength, lineLength)
 
       position += lineLength + 1
     }
@@ -113,7 +113,7 @@ export function createParser(onParse: EventSourceParseCallback): EventSourcePars
     }
   }
 
-  function parseEventStreamLine(
+  async function parseEventStreamLine(
     lineBuffer: string,
     index: number,
     fieldLength: number,
@@ -122,7 +122,7 @@ export function createParser(onParse: EventSourceParseCallback): EventSourcePars
     if (lineLength === 0) {
       // We reached the last line of this event
       if (data.length > 0) {
-        onParse({
+        await onParse({
           type: 'event',
           id: eventId,
           event: eventName || undefined,
@@ -161,7 +161,7 @@ export function createParser(onParse: EventSourceParseCallback): EventSourcePars
     } else if (field === 'retry') {
       const retry = parseInt(value, 10)
       if (!Number.isNaN(retry)) {
-        onParse({type: 'reconnect-interval', value: retry})
+        await onParse({type: 'reconnect-interval', value: retry})
       }
     }
   }
